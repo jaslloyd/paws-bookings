@@ -13,6 +13,13 @@ const { getBooking, removeBooking } = useBookings();
 // updates if the param changes (or the underlying data changes).
 const booking = computed(() => getBooking(route.params.id as string));
 
+// Pop back to wherever we came from (/admin or /), with a safe fallback
+// for when the page was opened directly (no in-app history to pop).
+const goBack = () => {
+  if (window.history.state?.back) router.back();
+  else router.push("/");
+};
+
 const handleDelete = () => {
   if (!booking.value) return;
   removeBooking(booking.value.id);
@@ -22,7 +29,7 @@ const handleDelete = () => {
 
 <template>
   <section>
-    <RouterLink to="/" class="back">← Back</RouterLink>
+    <button type="button" class="back" @click="goBack">← Back</button>
 
     <!-- v-if / v-else: the booking might not exist (bad/stale id) -->
     <template v-if="booking">
@@ -52,9 +59,16 @@ const handleDelete = () => {
 
 <style scoped>
 .back {
+  background: none;
+  border: none;
+  padding: 0;
   color: #137a4b;
-  text-decoration: none;
+  font: inherit;
   font-size: 0.9rem;
+  cursor: pointer;
+}
+.back:hover {
+  text-decoration: underline;
 }
 .source {
   display: inline-block;
