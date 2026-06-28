@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useBookings } from "../composables/useBookings";
+import { useBookingsStore } from "../stores/bookings";
 import { nightsBetween } from "../utils/bookings";
 
 const route = useRoute(); // info about the CURRENT route (params, query, etc.)
 const router = useRouter(); // the router instance, for programmatic navigation
 
-const { getBooking, removeBooking } = useBookings();
+// getBooking/removeBooking are actions (functions) → fine to destructure.
+const { getBooking, removeBooking } = useBookingsStore();
 
 // route.params.id is reactive — wrap the lookup in computed so the page
 // updates if the param changes (or the underlying data changes).

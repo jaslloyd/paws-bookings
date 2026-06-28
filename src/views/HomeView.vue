@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useBookings } from "../composables/useBookings";
+import { storeToRefs } from "pinia";
+import { useBookingsStore } from "../stores/bookings";
 
-const { sortedBookings, totalNights } = useBookings();
+const { sortedBookings, totalNights } = storeToRefs(useBookingsStore());
 
 // The soonest upcoming booking, or undefined if there are none.
 const nextBooking = computed(() => sortedBookings.value[0]);

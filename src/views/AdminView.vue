@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { reactive } from "vue";
+import { storeToRefs } from "pinia";
 import type { Booking } from "../types";
 import BookingCard from "../components/BookingCard.vue";
-import { useBookings } from "../composables/useBookings";
+import { useBookingsStore } from "../stores/bookings";
 
-// Same singleton state as every other page that calls useBookings().
-const { bookings, sortedBookings, totalNights, addBooking, removeBooking } =
-  useBookings();
+const store = useBookingsStore();
+// storeToRefs keeps state/getters reactive when destructured (see notes).
+const { bookings, sortedBookings, totalNights } = storeToRefs(store);
+// Actions are just functions — safe to destructure straight off the store.
+const { addBooking, removeBooking } = store;
 
 // Form is local UI state, so it stays in the component.
 const emptyForm = (): Omit<Booking, "id"> => ({
