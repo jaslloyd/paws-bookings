@@ -1,20 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
-
-// A booking can come from two places, for now.
-type BookingSource = "direct" | "pawshake";
-
-// The shape of one booking. This is our core domain type —
-// it'll grow, but this is enough to start.
-interface Booking {
-  id: string;
-  clientName: string;
-  petNames: string;
-  start: string; // ISO date, e.g. '2026-07-03'
-  end: string;
-  source: BookingSource;
-  notes?: string;
-}
+import type { Booking } from "./types";
+import { sortByStart, nightsBetween } from "./utils/bookings";
+import BookingCard from "./components/BookingCard.vue";
 
 // ref() with a TS generic: a reactive array of Bookings.
 // Hardcoded for now — Phase 2 swaps
@@ -62,17 +50,16 @@ const addBooking = () => {
   Object.assign(form, emptyForm());
 };
 
-const sortedBookings = computed(() =>
-  [...bookings.value].sort((a, b) => a.start.localeCompare(b.start)),
-);
+// Thin computed wrappers around the pure helpers (the "when", not the "what").
+const sortedBookings = computed(() => sortByStart(bookings.value));
 
 const totalNights = computed(() =>
-  bookings.value.reduce((sum, b) => {
-    const nights =
-      (new Date(b.end).getTime() - new Date(b.start).getTime()) / 86_400_000;
-    return sum + nights;
-  }, 0),
+  bookings.value.reduce((sum, b) => sum + nightsBetween(b), 0),
 );
+
+const removeBooking = (id: string) => {
+  bookings.value = bookings.value.filter((b) => b.id !== id);
+};
 </script>
 
 <template>
@@ -96,12 +83,12 @@ const totalNights = computed(() =>
     </form>
 
     <ul class="bookings">
-      <li v-for="booking in sortedBookings" :key="booking.id" class="booking">
-        <span class="dates">{{ booking.start }} → {{ booking.end }}</span>
-        <span class="client">{{ booking.clientName }} </span>
-        <span class="pets">{{ booking.petNames }}</span>
-        <span class="source" :class="booking.source">{{ booking.source }}</span>
-      </li>
+      <BookingCard
+        v-for="booking in sortedBookings"
+        :key="booking.id"
+        :booking="booking"
+        @delete="removeBooking"
+      />
     </ul>
   </main>
 </template>
@@ -160,41 +147,5 @@ h1 {
   padding: 0;
   display: grid;
   gap: 0.75rem;
-}
-.booking {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.25rem 1rem;
-  background: white;
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-}
-.dates {
-  font-weight: 600;
-}
-.client {
-  color: #333;
-}
-.pets {
-  color: #777;
-  font-size: 0.9rem;
-}
-
-.source {
-  justify-self: end;
-  align-self: start;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-}
-.source.pawshake {
-  background: #ffe8d6;
-  color: #b5530a;
-}
-.source.direct {
-  background: #d6f0e0;
-  color: #137a4b;
 }
 </style>
