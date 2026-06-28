@@ -1,32 +1,15 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from "vue";
+import { reactive } from "vue";
 import type { Booking } from "./types";
-import { sortByStart, nightsBetween } from "./utils/bookings";
 import BookingCard from "./components/BookingCard.vue";
+import { useBookings } from "./composables/useBookings";
 
-// ref() with a TS generic: a reactive array of Bookings.
-// Hardcoded for now — Phase 2 swaps
-const bookings = ref<Booking[]>([
-  {
-    id: "1",
-    clientName: "Sarah Connor",
-    petNames: "Rex",
-    start: "2026-07-03",
-    end: "2026-07-07",
-    source: "pawshake",
-  },
-  {
-    id: "2",
-    clientName: "John Wick",
-    petNames: "Daisy, Max",
-    start: "2026-07-10",
-    end: "2026-07-12",
-    source: "direct",
-    notes: "Daisy needs medication twice a day",
-  },
-]);
+// Pull domain state + operations from the composable.
+// Destructuring is SAFE here — these are refs/functions, not a reactive() object.
+const { bookings, sortedBookings, totalNights, addBooking, removeBooking } =
+  useBookings();
 
-// A factory for a blank form. Returns everything a Booking needs except `id`.
+// Form is local UI state, so it stays in the component.
 const emptyForm = (): Omit<Booking, "id"> => ({
   clientName: "",
   petNames: "",
@@ -36,29 +19,13 @@ const emptyForm = (): Omit<Booking, "id"> => ({
   notes: "",
 });
 
-// reactive() — like ref(), but for objects, and WITHOUT .value (see notes below).
 const form = reactive(emptyForm());
 
-const addBooking = () => {
-  // Minimal validation — we'll make this nicer later.
+const submitBooking = () => {
+  // Form-level validation lives with the form.
   if (!form.clientName || !form.start || !form.end) return;
-
-  // Spread the reactive form into a plain object snapshot + a fresh id.
-  bookings.value.push({ id: crypto.randomUUID(), ...form });
-
-  // Reset by copying blank values back onto the same reactive object.
-  Object.assign(form, emptyForm());
-};
-
-// Thin computed wrappers around the pure helpers (the "when", not the "what").
-const sortedBookings = computed(() => sortByStart(bookings.value));
-
-const totalNights = computed(() =>
-  bookings.value.reduce((sum, b) => sum + nightsBetween(b), 0),
-);
-
-const removeBooking = (id: string) => {
-  bookings.value = bookings.value.filter((b) => b.id !== id);
+  addBooking({ ...form }); // hand a plain snapshot to the composable
+  Object.assign(form, emptyForm()); // reset
 };
 </script>
 
@@ -69,7 +36,7 @@ const removeBooking = (id: string) => {
       {{ bookings.length }} upcoming · {{ totalNights }} nights
     </p>
 
-    <form class="form" @submit.prevent="addBooking">
+    <form class="form" @submit.prevent="submitBooking">
       <input v-model="form.clientName" placeholder="Client name" />
       <input v-model="form.petNames" placeholder="Pet names" />
       <label> From <input type="date" v-model="form.start" /> </label>
