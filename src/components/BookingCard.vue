@@ -18,7 +18,9 @@ const emit = defineEmits<{
 <template>
   <li class="booking">
     <span class="dates">{{ booking.start }} → {{ booking.end }}</span>
-    <span class="client">{{ booking.clientName }}</span>
+    <RouterLink class="client" :to="`/bookings/${booking.id}`">
+      {{ booking.clientName }}
+    </RouterLink>
     <span class="pets">{{ booking.petNames }}</span>
     <span class="nights">{{ nightsBetween(booking) }} nights</span>
     <span class="source" :class="booking.source">{{ booking.source }}</span>
