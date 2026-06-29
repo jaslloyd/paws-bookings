@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useReservationsStore } from "@/stores/reservations";
 import { bookedDates } from "@/utils/calendar";
@@ -55,16 +55,50 @@ function buildMonth(base: Date) {
     const available = iso >= todayISO && !bookedSet.value.has(iso);
     cells.push({ iso, day: d, available });
   }
+  // Always pad to 6 full weeks (42 cells) so every month is the same height
+  // and the calendar doesn't "jump" when you change months.
+  while (cells.length < 42) cells.push(null);
   return { label: `${MONTHS[month]} ${year}`, cells };
 }
 
-// The two visible months (left + the one after it).
-const months = computed(() => [
-  buildMonth(viewMonth.value),
-  buildMonth(
-    new Date(viewMonth.value.getFullYear(), viewMonth.value.getMonth() + 1, 1),
-  ),
-]);
+// One month on phones, two on wider screens.
+//
+// Why JS (matchMedia) and not just a CSS media query? Because we're changing
+// *behaviour*, not just styling: how many months to actually build/render. A
+// CSS query could hide the 2nd month, but the "next" arrow lives on the last
+// rendered month, so it would disappear too. By tracking the breakpoint in a
+// reactive ref, the `months` computed rebuilds (1 or 2) and the single mobile
+// month correctly gets BOTH arrows. Rule of thumb: media queries for how things
+// *look*, matchMedia for what the code *does*.
+const MOBILE_QUERY = "(max-width: 700px)";
+const isMobile = ref(
+  typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
+);
+let mql: MediaQueryList | undefined;
+const onMqlChange = (e: MediaQueryListEvent) => (isMobile.value = e.matches);
+onMounted(() => {
+  mql = window.matchMedia(MOBILE_QUERY);
+  isMobile.value = mql.matches;
+  mql.addEventListener("change", onMqlChange);
+});
+// Clean up the listener on unmount (like a useEffect cleanup) to avoid a leak.
+onUnmounted(() => mql?.removeEventListener("change", onMqlChange));
+
+const months = computed(() => {
+  const list = [buildMonth(viewMonth.value)];
+  if (!isMobile.value) {
+    list.push(
+      buildMonth(
+        new Date(
+          viewMonth.value.getFullYear(),
+          viewMonth.value.getMonth() + 1,
+          1,
+        ),
+      ),
+    );
+  }
+  return list;
+});
 </script>
 
 <template>
@@ -156,14 +190,10 @@ const months = computed(() => [
 }
 
 .months {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-@media (max-width: 700px) {
-  .months {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap; /* stacks the two months when there isn't room */
+  gap: 2rem 3rem;
 }
 
 .month-head {
@@ -191,8 +221,8 @@ const months = computed(() => [
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(7, 44px); /* fixed button size */
+  gap: 5px;
 }
 .weekday {
   text-align: center;
@@ -201,11 +231,12 @@ const months = computed(() => [
   padding-bottom: 0.25rem;
 }
 .cell {
-  aspect-ratio: 1;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  font-size: 0.9rem;
-  border-radius: 8px;
+  font-size: 0.95rem;
+  border-radius: 10px;
 }
 .cell.available {
   background: #c4ecc9;
