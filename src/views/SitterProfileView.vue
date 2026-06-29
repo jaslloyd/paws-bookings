@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "../stores/sitter";
 import BookingWidget from "../components/BookingWidget.vue";
+import BookingBar from "../components/BookingBar.vue";
+import BookingDrawer from "../components/BookingDrawer.vue";
 
 const route = useRoute();
 const { sitter } = storeToRefs(useSitterStore());
 
 // Only one sitter for now, but match the slug so bad URLs 404 cleanly.
 const found = computed(() => route.params.slug === sitter.value.slug);
+
+// Drawer open/close state lives here (parent of bar + drawer).
+const drawerOpen = ref(false);
 
 // Mosaic shows up to 5 photos (1 big + 2x2); the rest go behind "+N more".
 const visiblePhotos = computed(() => sitter.value.photos.slice(0, 5));
@@ -58,6 +63,10 @@ const extraCount = computed(() => Math.max(0, sitter.value.photos.length - 5));
     <aside class="booking-aside">
       <BookingWidget />
     </aside>
+
+    <!-- Mobile-only: condensed bar + a drawer it opens. -->
+    <BookingBar @open="drawerOpen = true" />
+    <BookingDrawer :open="drawerOpen" @close="drawerOpen = false" />
   </div>
 
   <p v-else class="missing">Sorry, we couldn't find that sitter.</p>
@@ -68,6 +77,16 @@ const extraCount = computed(() => Math.max(0, sitter.value.photos.length - 5));
 .profile {
   display: grid;
   gap: 2rem;
+}
+/* Mobile: hide the sidebar card (the bar+drawer take over) and leave room
+   at the bottom so the fixed bar doesn't cover the last content. */
+@media (max-width: 859px) {
+  .booking-aside {
+    display: none;
+  }
+  .profile {
+    padding-bottom: 96px;
+  }
 }
 @media (min-width: 860px) {
   .profile {
