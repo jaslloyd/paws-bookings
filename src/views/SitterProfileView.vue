@@ -16,62 +16,82 @@ const selectedPhoto = ref(0);
 </script>
 
 <template>
+  <!-- Whole page is two columns: left scrolls, right (booking) is sticky. -->
   <div v-if="found" class="profile">
-    <!-- Gallery (full width) -->
-    <div class="gallery">
-      <img class="hero" :src="sitter.photos[selectedPhoto]" :alt="sitter.name" />
-      <div class="thumbs">
-        <button
-          v-for="(photo, i) in sitter.photos"
-          :key="photo"
-          class="thumb"
-          :class="{ active: i === selectedPhoto }"
-          @click="selectedPhoto = i"
-        >
-          <img :src="photo" alt="" />
-        </button>
-      </div>
-    </div>
-
-    <!-- Two columns: content + sticky booking widget -->
-    <div class="layout">
-      <div class="content">
-        <header class="identity">
-          <h1>{{ sitter.name }}</h1>
-          <p class="headline">{{ sitter.headline }}</p>
-          <p class="area">📍 {{ sitter.area }}</p>
-        </header>
-
-        <section class="about">
-          <h2>About</h2>
-          <p>{{ sitter.bio }}</p>
-        </section>
-
-        <section class="availability">
-          <h2>Availability</h2>
-          <div class="calendar-placeholder">Calendar coming soon</div>
-        </section>
+    <div class="content">
+      <!-- Gallery -->
+      <div class="gallery">
+        <img
+          class="hero"
+          :src="sitter.photos[selectedPhoto]"
+          :alt="sitter.name"
+        />
+        <div class="thumbs">
+          <button
+            v-for="(photo, i) in sitter.photos"
+            :key="photo"
+            class="thumb"
+            :class="{ active: i === selectedPhoto }"
+            @click="selectedPhoto = i"
+          >
+            <img :src="photo" alt="" />
+          </button>
+        </div>
       </div>
 
-      <aside class="booking-aside">
-        <BookingWidget />
-      </aside>
+      <header class="identity">
+        <h1>{{ sitter.name }}</h1>
+        <p class="headline">{{ sitter.headline }}</p>
+        <p class="area">📍 {{ sitter.area }}</p>
+      </header>
+
+      <section class="about">
+        <h2>About</h2>
+        <p>{{ sitter.bio }}</p>
+      </section>
+
+      <section class="availability">
+        <h2>Availability</h2>
+        <div class="calendar-placeholder">Calendar coming soon</div>
+      </section>
     </div>
+
+    <aside class="booking-aside">
+      <BookingWidget />
+    </aside>
   </div>
 
   <p v-else class="missing">Sorry, we couldn't find that sitter.</p>
 </template>
 
 <style scoped>
+/* Single column on mobile; two columns ≥ 860px with a sticky right rail. */
 .profile {
   display: grid;
   gap: 2rem;
+}
+@media (min-width: 860px) {
+  .profile {
+    grid-template-columns: 1fr 340px;
+    align-items: start;
+  }
+  .booking-aside {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+/* Left column stacks its sections */
+.content {
+  display: grid;
+  gap: 2rem;
+  min-width: 0; /* lets the column shrink instead of overflowing */
 }
 
 /* Gallery */
 .hero {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 10;
   object-fit: cover;
   border-radius: 12px;
 }
@@ -98,24 +118,7 @@ const selectedPhoto = ref(0);
   object-fit: cover;
 }
 
-/* Layout: single column on mobile, two columns ≥ 860px */
-.layout {
-  display: grid;
-  gap: 2rem;
-}
-@media (min-width: 860px) {
-  .layout {
-    grid-template-columns: 1fr 320px;
-    align-items: start;
-  }
-  /* Sticky so the booking card follows as you scroll the content */
-  .booking-aside {
-    position: sticky;
-    top: 1rem;
-  }
-}
-
-/* Content */
+/* Identity */
 .identity h1 {
   margin: 0;
 }
@@ -128,6 +131,7 @@ const selectedPhoto = ref(0);
   color: #777;
   margin: 0;
 }
+
 h2 {
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
