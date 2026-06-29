@@ -3,21 +3,15 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
-import { useReservationsStore } from "@/stores/reservations";
-import { toBusyItems } from "@/utils/calendar";
 import SitterHeader from "@/components/sitter/SitterHeader.vue";
 import SitterGallery from "@/components/sitter/SitterGallery.vue";
-import BookingCalendar from "@/components/calendar/BookingCalendar.vue";
+import AvailabilityCalendar from "@/components/calendar/AvailabilityCalendar.vue";
 import BookingWidget from "@/components/booking/BookingWidget.vue";
 import BookingBar from "@/components/booking/BookingBar.vue";
 import BookingDrawer from "@/components/booking/BookingDrawer.vue";
 
 const route = useRoute();
 const { sitter } = storeToRefs(useSitterStore());
-const { reservations } = storeToRefs(useReservationsStore());
-
-// Anonymised booked ranges for the public availability calendar.
-const busy = computed(() => toBusyItems(reservations.value));
 
 // Only one sitter for now, but match the slug so bad URLs 404 cleanly.
 const found = computed(() => route.params.slug === sitter.value.slug);
@@ -42,9 +36,7 @@ const drawerOpen = ref(false);
 
         <section class="availability">
           <h2>Availability</h2>
-          <div class="availability-calendar">
-            <BookingCalendar :items="busy" mode="availability" />
-          </div>
+          <AvailabilityCalendar />
         </section>
       </div>
 
@@ -107,10 +99,6 @@ h2 {
 .about p {
   color: #333;
   line-height: 1.6;
-}
-
-.availability-calendar {
-  height: 420px;
 }
 
 .missing {
