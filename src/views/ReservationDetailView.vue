@@ -20,6 +20,13 @@ const reservation = computed(() =>
 const direct = computed(() =>
   reservation.value?.source === "direct" ? reservation.value : null,
 );
+// Title differs per variant — narrow here so the template doesn't touch
+// `reservation.title` (which only exists on ManualBlock).
+const title = computed(() => {
+  const r = reservation.value;
+  if (!r) return "";
+  return r.source === "direct" ? r.contact.name : r.title;
+});
 const serviceName = computed(() =>
   direct.value ? sitterStore.getService(direct.value.serviceId)?.name : null,
 );
@@ -53,7 +60,7 @@ const remove = () => {
 
     <template v-if="reservation">
       <header class="head">
-        <h1>{{ direct ? direct.contact.name : reservation.title }}</h1>
+        <h1>{{ title }}</h1>
         <span
           class="status"
           :class="reservation.source === 'manual' ? 'blocked' : reservation.status"
