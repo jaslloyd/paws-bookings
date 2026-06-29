@@ -16,7 +16,7 @@ const route = useRoute();
 const { sitter } = storeToRefs(useSitterStore());
 const { reservations } = storeToRefs(useReservationsStore());
 
-// Anonymised busy dates for the public availability calendar.
+// Anonymised booked ranges for the public availability calendar.
 const busy = computed(() => toBusyItems(reservations.value));
 
 // Only one sitter for now, but match the slug so bad URLs 404 cleanly.
@@ -43,7 +43,7 @@ const drawerOpen = ref(false);
         <section class="availability">
           <h2>Availability</h2>
           <div class="availability-calendar">
-            <BookingCalendar :items="busy" />
+            <BookingCalendar :items="busy" mode="availability" />
           </div>
         </section>
       </div>
@@ -108,6 +108,7 @@ h2 {
   color: #333;
   line-height: 1.6;
 }
+
 .availability-calendar {
   height: 420px;
 }

@@ -6,13 +6,33 @@ import { createEventsServicePlugin } from "@schedule-x/events-service";
 import "@schedule-x/theme-default/dist/index.css";
 import type { CalendarEvent } from "@/utils/calendar";
 
-const props = defineProps<{ items: CalendarEvent[] }>();
+const props = withDefaults(
+  defineProps<{
+    items: CalendarEvent[];
+    // "events" = admin (named, clickable); "availability" = client
+    // (gray shaded days, read-only).
+    mode?: "events" | "availability";
+  }>(),
+  { mode: "events" },
+);
 const emit = defineEmits<{ selectItem: [id: string] }>();
+
+const isAvailability = props.mode === "availability";
 
 // Lets us push event updates to the calendar reactively.
 const eventsService = createEventsServicePlugin();
 
 const today = new Date().toISOString().slice(0, 10);
+
+// Availability mode shades the booked ranges as gray background events
+// (greys the whole day) instead of titled bars.
+const toBackground = (items: CalendarEvent[]) =>
+  items.map((i) => ({
+    start: i.start,
+    end: i.end,
+    title: "Unavailable",
+    style: { backgroundColor: "#e9e9e9", color: "#9a9a9a" },
+  }));
 
 // IMPORTANT: a plain const, never a ref — the wrapper throws if calendarApp
 // is reactive (it manages its own internal reactivity).
@@ -22,7 +42,8 @@ const calendarApp = createCalendar(
     // Open on the month of the first event so something's visible.
     selectedDate: props.items[0]?.start ?? today,
     firstDayOfWeek: 1,
-    events: props.items,
+    events: isAvailability ? [] : props.items,
+    backgroundEvents: isAvailability ? toBackground(props.items) : [],
     calendars: {
       direct: {
         colorName: "direct",
@@ -41,17 +62,20 @@ const calendarApp = createCalendar(
         lightColors: { main: "#8a8a8a", container: "#ededed", onContainer: "#555555" },
       },
     },
-    callbacks: {
-      onEventClick: (event) => emit("selectItem", String(event.id)),
-    },
+    callbacks: isAvailability
+      ? {}
+      : { onEventClick: (event) => emit("selectItem", String(event.id)) },
   },
   [eventsService],
 );
 
-// Keep the calendar's events in sync when the source data changes.
+// Keep the calendar in sync when the source data changes.
 watch(
   () => props.items,
-  (items) => eventsService.set(items),
+  (items) => {
+    if (isAvailability) eventsService.setBackgroundEvents(toBackground(items));
+    else eventsService.set(items);
+  },
 );
 </script>
 

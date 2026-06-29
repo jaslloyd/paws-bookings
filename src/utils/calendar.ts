@@ -34,3 +34,25 @@ export function toBusyItems(reservations: Reservation[]): CalendarEvent[] {
       calendarId: "busy",
     }));
 }
+
+// Parse "YYYY-MM-DD" as a LOCAL date (avoids the UTC-midnight off-by-one).
+function parseISO(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// Every individual day that's already booked/blocked — for disabling them
+// in the date picker.
+export function bookedDates(reservations: Reservation[]): Date[] {
+  const out: Date[] = [];
+  for (const r of reservations) {
+    if (r.status !== "approved") continue;
+    const cur = parseISO(r.start);
+    const end = parseISO(r.end);
+    while (cur <= end) {
+      out.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  return out;
+}
