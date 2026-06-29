@@ -37,6 +37,9 @@ const nextBooking = computed(() => sortedBookings.value[0]);
 </template>
 
 <style scoped>
+section {
+  max-width: 640px;
+}
 .stats {
   font-size: 1.1rem;
   color: #444;

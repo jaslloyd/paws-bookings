@@ -25,7 +25,7 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  max-width: 640px;
+  max-width: 960px;
   margin: 0 auto 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #e5e5e5;
@@ -47,7 +47,7 @@
   font-weight: 600;
 }
 .content {
-  max-width: 640px;
+  max-width: 960px;
   margin: 0 auto;
 }
 </style>

@@ -59,6 +59,9 @@ const handleDelete = () => {
 </template>
 
 <style scoped>
+section {
+  max-width: 640px;
+}
 .back {
   background: none;
   border: none;

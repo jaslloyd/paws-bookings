@@ -62,6 +62,9 @@ const submitBooking = () => {
 </template>
 
 <style scoped>
+section {
+  max-width: 640px;
+}
 .count {
   color: #666;
   margin-top: 0.25rem;
