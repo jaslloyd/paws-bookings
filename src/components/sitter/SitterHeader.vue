@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useSitterStore } from "../stores/sitter";
-import StarRating from "./StarRating.vue";
+import { useSitterStore } from "@/stores/sitter";
+import StarRating from "@/components/ui/StarRating.vue";
 
 const { sitter } = storeToRefs(useSitterStore());
 </script>

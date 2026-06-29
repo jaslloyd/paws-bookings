@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useSitterStore } from "../stores/sitter";
-import { useBookingDraftStore } from "../stores/bookingDraft";
+import { useSitterStore } from "@/stores/sitter";
+import { useBookingDraftStore } from "@/stores/bookingDraft";
 import BookingControls from "./BookingControls.vue";
 
 const { sitter } = storeToRefs(useSitterStore());

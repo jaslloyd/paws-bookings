@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { useSitterStore } from "./sitter";
-import { quoteForRange } from "../utils/pricing";
+import { quoteForRange } from "@/utils/pricing";
 
 const eur = new Intl.NumberFormat("en-IE", {
   style: "currency",

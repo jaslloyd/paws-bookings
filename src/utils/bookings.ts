@@ -1,4 +1,4 @@
-import type { Booking } from "../types";
+import type { Booking } from "@/types";
 
 // Pure, framework-agnostic helpers — no Vue imports, easy to unit test.
 

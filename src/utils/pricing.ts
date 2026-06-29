@@ -1,4 +1,4 @@
-import type { PricingUnit, Service } from "../types";
+import type { PricingUnit, Service } from "@/types";
 
 const MS_PER_DAY = 86_400_000;
 

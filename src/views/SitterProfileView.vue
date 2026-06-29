@@ -2,12 +2,12 @@
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
-import { useSitterStore } from "../stores/sitter";
-import SitterHeader from "../components/SitterHeader.vue";
-import SitterGallery from "../components/SitterGallery.vue";
-import BookingWidget from "../components/BookingWidget.vue";
-import BookingBar from "../components/BookingBar.vue";
-import BookingDrawer from "../components/BookingDrawer.vue";
+import { useSitterStore } from "@/stores/sitter";
+import SitterHeader from "@/components/sitter/SitterHeader.vue";
+import SitterGallery from "@/components/sitter/SitterGallery.vue";
+import BookingWidget from "@/components/booking/BookingWidget.vue";
+import BookingBar from "@/components/booking/BookingBar.vue";
+import BookingDrawer from "@/components/booking/BookingDrawer.vue";
 
 const route = useRoute();
 const { sitter } = storeToRefs(useSitterStore());

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useBookingsStore } from "../stores/bookings";
-import { nightsBetween } from "../utils/bookings";
+import { useBookingsStore } from "@/stores/bookings";
+import { nightsBetween } from "@/utils/bookings";
 
 const route = useRoute(); // info about the CURRENT route (params, query, etc.)
 const router = useRouter(); // the router instance, for programmatic navigation

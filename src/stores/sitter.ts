@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import type { Service, Sitter } from "../types";
+import type { Service, Sitter } from "@/types";
 
 // Mock sitter — this is YOU. Later this comes from Supabase (one row for now,
 // many once sitter onboarding opens). Hardcoded so we can build the FE.

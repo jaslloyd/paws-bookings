@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Booking } from "../types";
-import { nightsBetween } from "../utils/bookings";
+import type { Booking } from "@/types";
+import { nightsBetween } from "@/utils/bookings";
 
 // Typed props — this component's public input API.
 // In React this would be: function BookingCard({ booking }: { booking: Booking })

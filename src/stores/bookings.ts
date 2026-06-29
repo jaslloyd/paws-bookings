@@ -1,7 +1,7 @@
 import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
-import type { Booking } from "../types";
-import { sortByStart, nightsBetween } from "../utils/bookings";
+import type { Booking } from "@/types";
+import { sortByStart, nightsBetween } from "@/utils/bookings";
 
 const STORAGE_KEY = "paws-bookings";
 

@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import AdminView from "../views/AdminView.vue";
-import BookingDetailView from "../views/BookingDetailView.vue";
-import SitterProfileView from "../views/SitterProfileView.vue";
-import BookingFlowView from "../views/BookingFlowView.vue";
+import HomeView from "@/views/HomeView.vue";
+import AdminView from "@/views/AdminView.vue";
+import BookingDetailView from "@/views/BookingDetailView.vue";
+import SitterProfileView from "@/views/SitterProfileView.vue";
+import BookingFlowView from "@/views/BookingFlowView.vue";
 
 const router = createRouter({
   // HTML5 history mode — real URLs, no #hash.

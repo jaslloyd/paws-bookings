@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useBookingsStore } from "../stores/bookings";
+import { useBookingsStore } from "@/stores/bookings";
 
 const { sortedBookings, totalNights } = storeToRefs(useBookingsStore());
 

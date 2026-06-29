@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { reactive } from "vue";
 import { storeToRefs } from "pinia";
-import type { Booking } from "../types";
-import BookingCard from "../components/BookingCard.vue";
-import { useBookingsStore } from "../stores/bookings";
+import type { Booking } from "@/types";
+import BookingCard from "@/components/reservation/BookingCard.vue";
+import { useBookingsStore } from "@/stores/bookings";
 
 const store = useBookingsStore();
 // storeToRefs keeps state/getters reactive when destructured (see notes).
