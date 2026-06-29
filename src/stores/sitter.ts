@@ -12,9 +12,14 @@ const mockSitter: Sitter = {
   bio: "We've been minding dogs for years and treat every guest like our own. Big garden, daily walks, lots of cuddles. Shelter-volunteer experience with anxious and senior dogs.",
   area: "South Dublin",
   photos: [
-    "https://placedog.net/640/360?id=1",
-    "https://placedog.net/640/360?id=2",
-    "https://placedog.net/640/360?id=3",
+    "https://picsum.photos/seed/paws1/640/480",
+    "https://picsum.photos/seed/paws2/640/480",
+    "https://picsum.photos/seed/paws3/640/480",
+    "https://picsum.photos/seed/paws4/640/480",
+    "https://picsum.photos/seed/paws5/640/480",
+    "https://picsum.photos/seed/paws6/640/480",
+    "https://picsum.photos/seed/paws7/640/480",
+    "https://picsum.photos/seed/paws8/640/480",
   ],
   whatsapp: "+353 87 000 0000",
   services: [
