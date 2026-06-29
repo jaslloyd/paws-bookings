@@ -10,6 +10,7 @@
       <!-- RouterLink renders an <a>; active-class styling is automatic. -->
       <RouterLink to="/">Dashboard</RouterLink>
       <RouterLink to="/admin">Admin</RouterLink>
+      <RouterLink to="/s/jason-south-dublin">Public page</RouterLink>
     </nav>
 
     <main class="content">
