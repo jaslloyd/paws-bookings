@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from "vue";
+import { computed, watch } from "vue";
 import { ScheduleXCalendar } from "@schedule-x/vue";
 import { createCalendar, viewMonthGrid } from "@schedule-x/calendar";
 import { createEventsServicePlugin } from "@schedule-x/events-service";
@@ -10,7 +10,7 @@ const props = withDefaults(
   defineProps<{
     items: CalendarEvent[];
     // "events" = admin (named, clickable); "availability" = client
-    // (gray shaded days, read-only).
+    // (booked days struck out, read-only).
     mode?: "events" | "availability";
   }>(),
   { mode: "events" },
@@ -19,20 +19,44 @@ const emit = defineEmits<{ selectItem: [id: string] }>();
 
 const isAvailability = props.mode === "availability";
 
-// Lets us push event updates to the calendar reactively.
 const eventsService = createEventsServicePlugin();
-
 const today = new Date().toISOString().slice(0, 10);
 
-// Availability mode shades the booked ranges as gray background events
-// (greys the whole day) instead of titled bars.
-const toBackground = (items: CalendarEvent[]) =>
-  items.map((i) => ({
-    start: i.start,
-    end: i.end,
-    title: "Unavailable",
-    style: { backgroundColor: "#e9e9e9", color: "#9a9a9a" },
-  }));
+const fromISO = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const toISO = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+
+// Expand booked ranges into individual day strings.
+function bookedDays(items: CalendarEvent[]): string[] {
+  const out: string[] = [];
+  for (const i of items) {
+    const cur = fromISO(i.start);
+    const end = fromISO(i.end);
+    while (cur <= end) {
+      out.push(toISO(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+  return out;
+}
+
+// Schedule-X tags each day cell with data-date, so we can strike through the
+// exact booked days — reads as "unavailable", not "selected".
+const disabledCss = computed(() => {
+  if (!isAvailability) return "";
+  return bookedDays(props.items)
+    .map(
+      (d) =>
+        `.sx__month-grid-day[data-date="${d}"] .sx__month-grid-day__header-date` +
+        `{text-decoration:line-through;color:#bcbcbc}`,
+    )
+    .join("");
+});
 
 // IMPORTANT: a plain const, never a ref — the wrapper throws if calendarApp
 // is reactive (it manages its own internal reactivity).
@@ -43,7 +67,6 @@ const calendarApp = createCalendar(
     selectedDate: props.items[0]?.start ?? today,
     firstDayOfWeek: 1,
     events: isAvailability ? [] : props.items,
-    backgroundEvents: isAvailability ? toBackground(props.items) : [],
     calendars: {
       direct: {
         colorName: "direct",
@@ -57,10 +80,6 @@ const calendarApp = createCalendar(
         colorName: "pending",
         lightColors: { main: "#b8860b", container: "#fff3cd", onContainer: "#6b5200" },
       },
-      busy: {
-        colorName: "busy",
-        lightColors: { main: "#8a8a8a", container: "#ededed", onContainer: "#555555" },
-      },
     },
     callbacks: isAvailability
       ? {}
@@ -69,18 +88,22 @@ const calendarApp = createCalendar(
   [eventsService],
 );
 
-// Keep the calendar in sync when the source data changes.
+// Keep events in sync (events mode only).
 watch(
   () => props.items,
   (items) => {
-    if (isAvailability) eventsService.setBackgroundEvents(toBackground(items));
-    else eventsService.set(items);
+    if (!isAvailability) eventsService.set(items);
   },
 );
 </script>
 
 <template>
   <ScheduleXCalendar :calendar-app="calendarApp" />
+
+  <!-- Dynamic per-date strikethrough for booked days (availability mode). -->
+  <Teleport to="head">
+    <component :is="'style'" v-if="disabledCss" v-text="disabledCss" />
+  </Teleport>
 </template>
 
 <!-- Not scoped: the calendar root is rendered by the child wrapper. -->
