@@ -34,10 +34,13 @@ export interface Sitter {
   id: string;
   slug: string; // unique URL segment → /s/:slug
   name: string;
+  avatar: string; // small profile photo for the header
   headline: string; // short tagline under the name
   bio: string;
   area: string; // "South Dublin"
-  photos: string[]; // image URLs
+  photos: string[]; // gallery image URLs
+  rating: number; // average rating (reviews list comes later)
+  reviewCount: number;
   services: Service[];
   whatsapp: string; // revealed to a client only after approval
 }
