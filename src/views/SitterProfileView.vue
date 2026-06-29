@@ -33,11 +33,6 @@ const drawerOpen = ref(false);
           <h2>About</h2>
           <p>{{ sitter.bio }}</p>
         </section>
-
-        <section class="availability">
-          <h2>Availability</h2>
-          <AvailabilityCalendar />
-        </section>
       </div>
 
       <aside class="booking-aside">
@@ -48,6 +43,12 @@ const drawerOpen = ref(false);
       <BookingBar @open="drawerOpen = true" />
       <BookingDrawer :open="drawerOpen" @close="drawerOpen = false" />
     </div>
+
+    <!-- Full width, so two months fit side by side with room to breathe. -->
+    <section class="availability">
+      <h2>Availability</h2>
+      <AvailabilityCalendar />
+    </section>
   </div>
 
   <p v-else class="missing">Sorry, we couldn't find that sitter.</p>
@@ -57,6 +58,7 @@ const drawerOpen = ref(false);
 .profile-page {
   display: grid;
   gap: 1.5rem;
+  padding-bottom: 4rem;
 }
 
 /* Single column on mobile; two columns ≥ 860px with a sticky right rail. */
