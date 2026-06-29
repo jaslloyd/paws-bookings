@@ -2,11 +2,7 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { useSitterStore } from "./sitter";
 import { quoteForRange } from "@/utils/pricing";
-
-const eur = new Intl.NumberFormat("en-IE", {
-  style: "currency",
-  currency: "EUR",
-});
+import { formatEuro } from "@/utils/currency";
 
 /**
  * The in-progress booking selection, shared across every UI that shows it
@@ -31,7 +27,7 @@ export const useBookingDraftStore = defineStore("bookingDraft", () => {
       : 0,
   );
 
-  const formattedTotal = computed(() => eur.format(total.value));
+  const formattedTotal = computed(() => formatEuro(total.value));
 
   function addPet() {
     pets.value++;

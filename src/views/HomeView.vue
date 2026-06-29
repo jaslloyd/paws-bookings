@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useBookingsStore } from "@/stores/bookings";
+import { useReservationsStore } from "@/stores/reservations";
+import { sortByStart, nightsBetween } from "@/utils/bookings";
 
-const { sortedBookings, totalNights } = storeToRefs(useBookingsStore());
+const { reservations, pending } = storeToRefs(useReservationsStore());
 
-// The soonest upcoming booking, or undefined if there are none.
-const nextBooking = computed(() => sortedBookings.value[0]);
+const confirmed = computed(() =>
+  sortByStart(reservations.value.filter((r) => r.status === "approved")),
+);
+const nextBooking = computed(() => confirmed.value[0]);
+const totalNights = computed(() =>
+  confirmed.value.reduce((sum, r) => sum + nightsBetween(r), 0),
+);
 </script>
 
 <template>
@@ -14,25 +20,18 @@ const nextBooking = computed(() => sortedBookings.value[0]);
     <h1>🐾 Dashboard</h1>
 
     <p class="stats">
-      <strong>{{ sortedBookings.length }}</strong> upcoming ·
-      <strong>{{ totalNights }}</strong> nights booked
+      <strong>{{ confirmed.length }}</strong> confirmed ·
+      <strong>{{ pending.length }}</strong> pending ·
+      <strong>{{ totalNights }}</strong> nights
     </p>
 
     <p v-if="nextBooking" class="next">
-      Next up: <strong>{{ nextBooking.clientName }}</strong> from
+      Next up: <strong>{{ nextBooking.contact.name }}</strong> from
       {{ nextBooking.start }}
     </p>
-    <p v-else class="next">No bookings yet.</p>
+    <p v-else class="next">No confirmed bookings yet.</p>
 
-    <h2>Upcoming</h2>
-    <ul class="list">
-      <li v-for="booking in sortedBookings" :key="booking.id">
-        <!-- router-link is Vue Router's <a>. Renders an anchor, no page reload. -->
-        <RouterLink :to="`/bookings/${booking.id}`">
-          {{ booking.start }} — {{ booking.clientName }} ({{ booking.petNames }})
-        </RouterLink>
-      </li>
-    </ul>
+    <RouterLink to="/admin" class="link">Manage requests →</RouterLink>
   </section>
 </template>
 
@@ -47,17 +46,7 @@ section {
 .next {
   color: #666;
 }
-.list {
-  list-style: none;
-  padding: 0;
-  display: grid;
-  gap: 0.4rem;
-}
-.list a {
+.link {
   color: #137a4b;
-  text-decoration: none;
-}
-.list a:hover {
-  text-decoration: underline;
 }
 </style>

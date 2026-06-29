@@ -1,20 +1,5 @@
 // ── Shared domain types ───────────────────────────────────────
 
-// NOTE: `Booking` is the original simple admin model. It's being superseded
-// by `Reservation` (below) and will be migrated when we build the booking
-// flow. Kept for now so the existing admin pages keep working.
-export type BookingSource = "direct" | "pawshake";
-
-export interface Booking {
-  id: string;
-  clientName: string;
-  petNames: string;
-  start: string;
-  end: string;
-  source: BookingSource;
-  notes?: string;
-}
-
 // ── Sitter & services ─────────────────────────────────────────
 
 // How a service is measured/priced. night/day derive quantity from a date
@@ -70,20 +55,45 @@ export interface Pet {
 export type ReservationStatus =
   | "pending"
   | "approved"
-  | "denied"
+  | "declined"
   | "cancelled";
 
-export interface Reservation {
+// Who the request is from. Inline for now — becomes a User reference once
+// accounts exist (then we prefill this from the signed-in client).
+export interface ReservationContact {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+// Fields common to anything that occupies the calendar.
+interface ReservationBase {
   id: string;
   sitterId: string;
-  clientId: string; // → User.id
-  serviceId: string; // → Service.id
   start: string; // ISO date
   end: string;
-  petIds: string[]; // → Pet.id[]
-  quotedPrice: number; // snapshot of the agreed price at request time
   status: ReservationStatus;
-  source: "direct" | "manual"; // manual = Pawshake / blocked dates
   createdAt: string; // ISO datetime
   notes?: string;
 }
+
+// A real client request made through the booking flow.
+export interface DirectReservation extends ReservationBase {
+  source: "direct";
+  serviceId: string; // → Service.id
+  pets: number; // count for now (Pet records come later)
+  quotedPrice: number; // snapshot of the agreed price at request time
+  contact: ReservationContact;
+  petDetails?: string; // free text until pet profiles exist
+  message?: string; // optional message to the sitter
+}
+
+// A manually blocked period (e.g. a Pawshake booking) — no client or price.
+export interface ManualBlock extends ReservationBase {
+  source: "manual";
+  title: string; // label, e.g. "Pawshake — Bella"
+}
+
+// Discriminated union on `source`: TS narrows to the right shape once you
+// check `reservation.source`.
+export type Reservation = DirectReservation | ManualBlock;
