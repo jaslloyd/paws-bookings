@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
 import { useBookingDraftStore } from "@/stores/bookingDraft";
@@ -9,6 +10,19 @@ const draft = useBookingDraftStore();
 // State/getters need storeToRefs; actions come straight off the store.
 const { serviceId, pets, start, end, service } = storeToRefs(draft);
 const { addPet, removePet } = draft;
+
+// Dates are chosen on the availability calendar — shown read-only here.
+const fmt = (iso: string) =>
+  new Date(`${iso}T00:00`).toLocaleDateString("en-IE", {
+    day: "numeric",
+    month: "short",
+  });
+const dateLabel = computed(() => {
+  if (!start.value || !end.value) return "Select on calendar";
+  return start.value === end.value
+    ? fmt(start.value)
+    : `${fmt(start.value)} – ${fmt(end.value)}`;
+});
 </script>
 
 <template>
@@ -41,10 +55,10 @@ const { addPet, removePet } = draft;
 
   <hr />
 
-  <!-- Dates (plain inputs now; a calendar comes later) -->
-  <div class="row dates-row">
-    <label>From <input type="date" v-model="start" /></label>
-    <label>To <input type="date" v-model="end" /></label>
+  <!-- Dates (read-only; picked on the calendar) -->
+  <div class="row">
+    <span>Dates</span>
+    <strong class="dates-value">{{ dateLabel }}</strong>
   </div>
 </template>
 
@@ -100,21 +114,7 @@ hr {
   text-align: center;
 }
 
-.dates-row {
-  justify-content: flex-start;
-  gap: 1.25rem;
-}
-.dates-row label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: #555;
-}
-.dates-row input {
-  font: inherit;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #d4d4d4;
-  border-radius: 6px;
+.dates-value {
+  font-weight: 600;
 }
 </style>
