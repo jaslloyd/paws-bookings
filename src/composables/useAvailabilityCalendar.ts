@@ -8,6 +8,7 @@ export interface Cell {
   iso: string;
   day: number;
   available: boolean;
+  booked: boolean; // unavailable specifically because it's booked/blocked
 }
 
 const MONTHS = [
@@ -64,7 +65,12 @@ export function useAvailabilityCalendar() {
     for (let i = 0; i < firstWeekday; i++) cells.push(null); // leading blanks
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = toISO(new Date(year, month, d));
-      cells.push({ iso, day: d, available: isAvailable(iso) });
+      cells.push({
+        iso,
+        day: d,
+        available: isAvailable(iso),
+        booked: bookedSet.value.has(iso),
+      });
     }
     // Pad to 6 full weeks (42 cells) so every month is the same height.
     while (cells.length < 42) cells.push(null);

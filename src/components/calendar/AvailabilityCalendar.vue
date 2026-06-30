@@ -10,10 +10,12 @@ const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
 <template>
   <div class="availability">
     <div class="legend">
-      <span class="swatch available" />
-      Available
-      <span class="swatch unavailable" />
-      Not available
+      <span class="legend-item">
+        <span class="legend-day avail">12</span> Available
+      </span>
+      <span class="legend-item">
+        <span class="legend-day booked">12</span> Not available
+      </span>
     </div>
 
     <div class="months" @mouseleave="clearHover">
@@ -54,7 +56,11 @@ const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
               v-else
               class="cell"
               :class="[
-                cell.available ? 'available' : 'unavailable',
+                cell.available
+                  ? 'available'
+                  : cell.booked
+                    ? 'booked'
+                    : 'unavailable',
                 cellSelection(cell),
               ]"
               @click="onCellClick(cell)"
@@ -78,26 +84,32 @@ const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
 .legend {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.5rem;
   font-size: 0.85rem;
   color: #555;
 }
-.swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
-.swatch.available {
+/* Mini samples that mirror the real day styles. */
+.legend-day {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.78rem;
+  border-radius: 6px;
+}
+.legend-day.avail {
   background: #c4ecc9;
+  color: #14532d;
+  font-weight: 500;
 }
-.swatch.unavailable {
-  background: repeating-linear-gradient(
-    45deg,
-    #eee,
-    #eee 3px,
-    #d8d8d8 3px,
-    #d8d8d8 6px
-  );
+.legend-day.booked {
+  color: #b8b8b8;
+  text-decoration: line-through;
 }
 
 .months {
@@ -155,8 +167,14 @@ const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
   font-weight: 500;
   cursor: pointer;
 }
+/* Past / non-bookable days — plain grey. */
 .cell.unavailable {
   color: #c4c4c4;
+}
+/* Booked/blocked days — struck through so they're clearly "taken". */
+.cell.booked {
+  color: #b8b8b8;
+  text-decoration: line-through;
 }
 
 /* Selection — a distinct blue so it stands out from the available green.
