@@ -1,5 +1,6 @@
-import { ref, computed, watch } from "vue";
+import { computed } from "vue";
 import { defineStore } from "pinia";
+import { useLocalStorage } from "@vueuse/core";
 import type { DirectReservation, ManualBlock, Reservation } from "@/types";
 
 // Bump the version suffix to force-ignore stale saved data (e.g. when the
@@ -56,16 +57,6 @@ const seed: Reservation[] = [
   mkBlock("b10", "2026-10-24", "2026-12-31"),
 ];
 
-function load(): Reservation[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return seed;
-  try {
-    return JSON.parse(raw) as Reservation[];
-  } catch {
-    return seed;
-  }
-}
-
 type NewRequest = Omit<
   DirectReservation,
   "id" | "status" | "createdAt" | "source"
@@ -73,13 +64,10 @@ type NewRequest = Omit<
 type NewBlock = Omit<ManualBlock, "id" | "status" | "createdAt" | "source">;
 
 export const useReservationsStore = defineStore("reservations", () => {
-  const reservations = ref<Reservation[]>(load());
-
-  watch(
-    reservations,
-    (current) => localStorage.setItem(STORAGE_KEY, JSON.stringify(current)),
-    { deep: true },
-  );
+  // useLocalStorage = a reactive ref synced to localStorage (deep-watched,
+  // JSON-serialised, falls back to `seed` when the key is empty). Replaces our
+  // manual load() + watch(localStorage.setItem).
+  const reservations = useLocalStorage<Reservation[]>(STORAGE_KEY, seed);
 
   const pending = computed(() =>
     reservations.value.filter((r) => r.status === "pending"),

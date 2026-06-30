@@ -24,7 +24,7 @@ useBookingUrlSync();
 // Tab title → "Jason & Rachelle · Paws" (VueUse). The getter tracks
 // sitter.name reactively; restoreOnUnmount resets it when leaving the page.
 useTitle(() => (found.value ? sitter.value.name : "Sitter not found"), {
-  titleTemplate: "%s · Paws",
+  titleTemplate: "%s | Pet Sitter | Paws",
   restoreOnUnmount: (original) => original,
 });
 

@@ -1,4 +1,5 @@
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { useReservationsStore } from "@/stores/reservations";
 import { useBookingDraftStore } from "@/stores/bookingDraft";
@@ -77,21 +78,12 @@ export function useAvailabilityCalendar() {
     return { label: `${MONTHS[month]} ${year}`, cells };
   }
 
-  // One month on phones, two on wider screens. JS (not a CSS query) because
-  // we change *how many months we build*, and the "next" arrow lives on the
-  // last rendered month — a single mobile month must get BOTH arrows.
-  const MOBILE_QUERY = "(max-width: 700px)";
-  const isMobile = ref(
-    typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
-  );
-  let mql: MediaQueryList | undefined;
-  const onMqlChange = (e: MediaQueryListEvent) => (isMobile.value = e.matches);
-  onMounted(() => {
-    mql = window.matchMedia(MOBILE_QUERY);
-    isMobile.value = mql.matches;
-    mql.addEventListener("change", onMqlChange);
-  });
-  onUnmounted(() => mql?.removeEventListener("change", onMqlChange));
+  // One month on phones, two on wider screens. We track this in JS (not just a
+  // CSS query) because we change *how many months we build*, and the "next"
+  // arrow lives on the last rendered month — a single mobile month must get
+  // BOTH arrows. VueUse's useMediaQuery gives a reactive ref and handles the
+  // listener + cleanup for us.
+  const isMobile = useMediaQuery("(max-width: 700px)");
 
   const months = computed(() => {
     const list = [buildMonth(viewMonth.value)];
