@@ -24,15 +24,22 @@ const drawerOpen = ref(false);
   <div v-if="found" class="profile-page">
     <SitterHeader />
 
-    <!-- Below the header: two columns — left scrolls, right (booking) sticky. -->
+    <!-- Two columns: calendar (+ secondary info) scrolls on the left, the
+         booking widget stays sticky on the right so the price/CTA is visible
+         above the fold for warm visitors arriving via the private link. -->
     <div class="profile">
       <div class="content">
-        <SitterGallery :photos="sitter.photos" :alt="sitter.name" />
+        <section class="availability">
+          <h2>Availability</h2>
+          <AvailabilityCalendar />
+        </section>
 
         <section class="about">
           <h2>About</h2>
           <p>{{ sitter.bio }}</p>
         </section>
+
+        <SitterGallery :photos="sitter.photos" :alt="sitter.name" />
       </div>
 
       <aside class="booking-aside">
@@ -43,12 +50,6 @@ const drawerOpen = ref(false);
       <BookingBar @open="drawerOpen = true" />
       <BookingDrawer :open="drawerOpen" @close="drawerOpen = false" />
     </div>
-
-    <!-- Full width, so two months fit side by side with room to breathe. -->
-    <section class="availability">
-      <h2>Availability</h2>
-      <AvailabilityCalendar />
-    </section>
   </div>
 
   <p v-else class="missing">Sorry, we couldn't find that sitter.</p>
@@ -61,18 +62,16 @@ const drawerOpen = ref(false);
   padding-bottom: 4rem;
 }
 
-/* Single column on mobile; two columns ≥ 860px with a sticky right rail. */
 .profile {
   display: grid;
   gap: 2rem;
 }
-/* Mobile: hide the sidebar card (the bar+drawer take over) and leave room
-   at the bottom so the fixed bar doesn't cover the last content. */
+/* Mobile: hide the sidebar card (bar + drawer take over), pad for the bar. */
 @media (max-width: 859px) {
   .booking-aside {
     display: none;
   }
-  .profile {
+  .profile-page {
     padding-bottom: 96px;
   }
 }
@@ -87,20 +86,22 @@ const drawerOpen = ref(false);
   }
 }
 
-/* Left column stacks its sections */
+/* Left column stacks its sections. */
 .content {
   display: grid;
   gap: 2rem;
   min-width: 0; /* lets the column shrink instead of overflowing */
 }
 
-h2 {
+.availability h2,
+.about h2 {
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
 }
 .about p {
   color: #333;
   line-height: 1.6;
+  max-width: 640px;
 }
 
 .missing {

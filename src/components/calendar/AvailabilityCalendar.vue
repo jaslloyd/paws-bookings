@@ -116,7 +116,7 @@ const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
   display: flex;
   justify-content: center;
   flex-wrap: wrap; /* stacks the two months when there isn't room */
-  gap: 2rem 3rem;
+  gap: 1.5rem;
 }
 
 .month-head {
