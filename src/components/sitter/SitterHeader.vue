@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
+import { useReviewsStore } from "@/stores/reviews";
 import StarRating from "@/components/ui/StarRating.vue";
 
 const { sitter } = storeToRefs(useSitterStore());
+const { count, average } = storeToRefs(useReviewsStore());
 </script>
 
 <template>
@@ -16,10 +18,10 @@ const { sitter } = storeToRefs(useSitterStore());
     </div>
 
     <div class="rating">
-      <StarRating :rating="sitter.rating" />
-      <button type="button" class="reviews-link">
-        ({{ sitter.reviewCount }} reviews)
-      </button>
+      <StarRating :rating="average" />
+      <RouterLink class="reviews-link" :to="`/s/${sitter.slug}/reviews`">
+        ({{ count }} reviews)
+      </RouterLink>
     </div>
   </header>
 </template>

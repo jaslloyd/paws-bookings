@@ -13,8 +13,6 @@ const mockSitter: Sitter = {
   slug: "jason-south-dublin",
   name: "Jason & Rachelle",
   avatar: `${CDN}/q3nf6kz7u1p8ng6k5eyldcvl.jpg`,
-  rating: 5.0,
-  reviewCount: 29,
   headline: "Trusted care from a dog-loving duo with shelter experience",
   bio: "Hi! We're Jason and Rachelle, a passionate couple of pet lovers with a deep appreciation for dogs of all shapes and sizes. We've volunteered extensively at Ash Animal Rescue, working with dogs of all temperaments — from helping nervous dogs learn to trust again to caring for rescues. We've raised our own dogs too: a Labrador, a Jack Russell, and a Pyrenean Sheepdog. We work from home, so we can provide round-the-clock care on weekdays and weekends. Our spacious duplex (90m²) has a safe courtyard for playtime, and we're near Memorial Park for regular walks. We don't have a residential dog at the moment and only accept one booking at a time. We do accept multiple dogs as long as they're from the same family.",
   area: "Dublin 8",

@@ -24,10 +24,17 @@ export interface Sitter {
   bio: string;
   area: string; // "South Dublin"
   photos: string[]; // gallery image URLs
-  rating: number; // average rating (reviews list comes later)
-  reviewCount: number;
   services: Service[];
   whatsapp: string; // revealed to a client only after approval
+}
+
+// A client review. Rating + count for the sitter are derived from these.
+export interface Review {
+  id: string;
+  author: string;
+  rating: number; // 1–5
+  date: string; // ISO date
+  text: string;
 }
 
 // ── People & pets ─────────────────────────────────────────────

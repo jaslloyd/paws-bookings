@@ -19,6 +19,11 @@ const router = createRouter({
     // Public per-sitter pages
     { path: "/s/:slug", name: "sitter", component: SitterProfileView },
     { path: "/s/:slug/book", name: "book", component: BookingFlowView },
+    {
+      path: "/s/:slug/reviews",
+      name: "reviews",
+      component: () => import("@/views/ReviewsView.vue"),
+    },
   ],
 });
 
