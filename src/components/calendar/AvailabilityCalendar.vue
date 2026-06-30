@@ -1,104 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useReservationsStore } from "@/stores/reservations";
-import { bookedDates } from "@/utils/calendar";
-
-const { reservations } = storeToRefs(useReservationsStore());
-
-const toISO = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
-
-// Set of booked day strings for O(1) lookup.
-const bookedSet = computed(
-  () => new Set(bookedDates(reservations.value).map(toISO)),
-);
-
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-const todayISO = toISO(today);
-
-// First day of the left-hand month on screen.
-const viewMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1));
-const shift = (n: number) => {
-  viewMonth.value = new Date(
-    viewMonth.value.getFullYear(),
-    viewMonth.value.getMonth() + n,
-    1,
-  );
-};
+import { useAvailabilityCalendar } from "@/composables/useAvailabilityCalendar";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
-interface Cell {
-  iso: string;
-  day: number;
-  available: boolean;
-}
-
-function buildMonth(base: Date) {
-  const year = base.getFullYear();
-  const month = base.getMonth();
-  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon-based
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const cells: (Cell | null)[] = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null); // leading blanks
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso = toISO(new Date(year, month, d));
-    const available = iso >= todayISO && !bookedSet.value.has(iso);
-    cells.push({ iso, day: d, available });
-  }
-  // Always pad to 6 full weeks (42 cells) so every month is the same height
-  // and the calendar doesn't "jump" when you change months.
-  while (cells.length < 42) cells.push(null);
-  return { label: `${MONTHS[month]} ${year}`, cells };
-}
-
-// One month on phones, two on wider screens.
-//
-// Why JS (matchMedia) and not just a CSS media query? Because we're changing
-// *behaviour*, not just styling: how many months to actually build/render. A
-// CSS query could hide the 2nd month, but the "next" arrow lives on the last
-// rendered month, so it would disappear too. By tracking the breakpoint in a
-// reactive ref, the `months` computed rebuilds (1 or 2) and the single mobile
-// month correctly gets BOTH arrows. Rule of thumb: media queries for how things
-// *look*, matchMedia for what the code *does*.
-const MOBILE_QUERY = "(max-width: 700px)";
-const isMobile = ref(
-  typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
-);
-let mql: MediaQueryList | undefined;
-const onMqlChange = (e: MediaQueryListEvent) => (isMobile.value = e.matches);
-onMounted(() => {
-  mql = window.matchMedia(MOBILE_QUERY);
-  isMobile.value = mql.matches;
-  mql.addEventListener("change", onMqlChange);
-});
-// Clean up the listener on unmount (like a useEffect cleanup) to avoid a leak.
-onUnmounted(() => mql?.removeEventListener("change", onMqlChange));
-
-const months = computed(() => {
-  const list = [buildMonth(viewMonth.value)];
-  if (!isMobile.value) {
-    list.push(
-      buildMonth(
-        new Date(
-          viewMonth.value.getFullYear(),
-          viewMonth.value.getMonth() + 1,
-          1,
-        ),
-      ),
-    );
-  }
-  return list;
-});
+const { months, shift, clearHover, onCellClick, onCellEnter, cellSelection } =
+  useAvailabilityCalendar();
 </script>
 
 <template>
@@ -110,7 +16,7 @@ const months = computed(() => {
       Not available
     </div>
 
-    <div class="months">
+    <div class="months" @mouseleave="clearHover">
       <div v-for="(m, idx) in months" :key="m.label" class="month">
         <div class="month-head">
           <button
@@ -147,7 +53,12 @@ const months = computed(() => {
             <span
               v-else
               class="cell"
-              :class="cell.available ? 'available' : 'unavailable'"
+              :class="[
+                cell.available ? 'available' : 'unavailable',
+                cellSelection(cell),
+              ]"
+              @click="onCellClick(cell)"
+              @mouseenter="onCellEnter(cell)"
             >
               {{ cell.day }}
             </span>
@@ -242,8 +153,23 @@ const months = computed(() => {
   background: #c4ecc9;
   color: #14532d;
   font-weight: 500;
+  cursor: pointer;
 }
 .cell.unavailable {
   color: #c4c4c4;
+}
+
+/* Selection — a distinct blue so it stands out from the available green.
+   Defined after .available so it overrides the base colour. */
+.cell.sel-range {
+  background: #c7d7f7;
+  color: #1e3a8a;
+}
+.cell.sel-start,
+.cell.sel-end,
+.cell.sel-single {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
 }
 </style>
