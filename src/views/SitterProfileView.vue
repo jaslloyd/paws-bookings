@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
+import { useBookingUrlSync } from "@/composables/useBookingUrlSync";
 import SitterHeader from "@/components/sitter/SitterHeader.vue";
 import SitterGallery from "@/components/sitter/SitterGallery.vue";
 import AvailabilityCalendar from "@/components/calendar/AvailabilityCalendar.vue";
@@ -15,6 +16,9 @@ const { sitter } = storeToRefs(useSitterStore());
 
 // Only one sitter for now, but match the slug so bad URLs 404 cleanly.
 const found = computed(() => route.params.slug === sitter.value.slug);
+
+// Keep the booking selection (service/pets/dates) in the URL query string.
+useBookingUrlSync();
 
 // Drawer open/close state lives here (parent of bar + drawer).
 const drawerOpen = ref(false);
