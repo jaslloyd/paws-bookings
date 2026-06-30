@@ -21,11 +21,11 @@ const found = computed(() => route.params.slug === sitter.value.slug);
 // Keep the booking selection (service/pets/dates) in the URL query string.
 useBookingUrlSync();
 
-// Tab title → "Jason & Rachelle · Paws" (VueUse). The getter tracks
-// sitter.name reactively; restoreOnUnmount resets it when leaving the page.
+// Profile has a DYNAMIC title (sitter name), so it sets its own here rather
+// than via route meta. No restoreOnUnmount needed — the router's afterEach
+// guard sets the next route's title on navigation.
 useTitle(() => (found.value ? sitter.value.name : "Sitter not found"), {
   titleTemplate: "%s | Pet Sitter | Paws",
-  restoreOnUnmount: (original) => original,
 });
 
 // Drawer open/close state lives here (parent of bar + drawer).
