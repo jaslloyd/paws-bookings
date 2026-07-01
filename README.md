@@ -6,6 +6,8 @@ The goal is a single source of truth: one place where a sitter publishes their s
 
 Although it's built around pet sitting, the core is a generic reservation system and could be repurposed for any date-based service business.
 
+![The sitter's public booking page — availability calendar and live-pricing booking widget](docs/sitter-page.png)
+
 ## What it does
 
 **Public side — the sitter's bookable page** (`/s/:slug`)
