@@ -8,7 +8,7 @@ import ReviewCard from "@/components/reviews/ReviewCard.vue";
 
 const { sitter } = storeToRefs(useSitterStore());
 const reviewsStore = useReviewsStore();
-const { sorted, count, average, isLoading } = storeToRefs(reviewsStore);
+const { sorted, count, average, status } = storeToRefs(reviewsStore);
 
 onMounted(() => reviewsStore.fetch());
 </script>
@@ -28,7 +28,10 @@ onMounted(() => reviewsStore.fetch());
       </div>
     </header>
 
-    <p v-if="isLoading && !sorted.length" class="loading">Loading reviews…</p>
+    <p v-if="status === 'loading'" class="loading">Loading reviews…</p>
+    <p v-else-if="status === 'error'" class="loading">
+      Couldn't load reviews — please try again.
+    </p>
     <div v-else class="list">
       <ReviewCard v-for="r in sorted" :key="r.id" :review="r" />
     </div>

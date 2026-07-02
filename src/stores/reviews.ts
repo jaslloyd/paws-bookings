@@ -5,26 +5,31 @@ import { supabase } from "@/lib/supabase";
 
 // Reviews now come from Supabase. The `reviews` columns (id, author, rating,
 // date, text) match the Review type 1:1, so no snake→camel mapping is needed.
+// One explicit status instead of a soup of booleans — the states are mutually
+// exclusive, so no impossible combinations. (This is what data-fetching libs
+// like TanStack Query / Pinia Colada formalise for you.)
+type Status = "idle" | "loading" | "success" | "error";
+
 export const useReviewsStore = defineStore("reviews", () => {
   const reviews = ref<Review[]>([]);
-  const isLoading = ref(false);
-  const loaded = ref(false);
+  const status = ref<Status>("idle");
+  const isLoading = computed(() => status.value === "loading");
 
   // Idempotent: safe to call from multiple components (header + reviews page).
   async function fetch() {
-    if (loaded.value || isLoading.value) return;
-    isLoading.value = true;
+    if (status.value === "loading" || status.value === "success") return;
+    status.value = "loading";
     const { data, error } = await supabase
       .from("reviews")
       .select("id, author, rating, date, text")
       .order("date", { ascending: false });
-    isLoading.value = false;
     if (error) {
       console.error("Failed to load reviews:", error.message);
+      status.value = "error";
       return;
     }
     reviews.value = (data ?? []) as Review[];
-    loaded.value = true;
+    status.value = "success";
   }
 
   const count = computed(() => reviews.value.length);
@@ -52,5 +57,5 @@ export const useReviewsStore = defineStore("reviews", () => {
     if (row) reviews.value.push(row as Review);
   }
 
-  return { reviews, sorted, count, average, isLoading, fetch, addReview };
+  return { reviews, sorted, count, average, status, isLoading, fetch, addReview };
 });
