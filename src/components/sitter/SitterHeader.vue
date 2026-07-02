@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
 import { useReviewsStore } from "@/stores/reviews";
 import StarRating from "@/components/ui/StarRating.vue";
 
 const { sitter } = storeToRefs(useSitterStore());
-const { count, average } = storeToRefs(useReviewsStore());
+const reviewsStore = useReviewsStore();
+const { count, average } = storeToRefs(reviewsStore);
+
+// Load reviews from Supabase (idempotent — the reviews page may also call it).
+onMounted(() => reviewsStore.fetch());
 </script>
 
 <template>

@@ -1,71 +1,31 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import type { Review } from "@/types";
+import { supabase } from "@/lib/supabase";
 
-// Pawshake's review text isn't readable from the page, so these are realistic
-// placeholders in the right shape — REPLACE the text with your real reviews.
-// This array is the base dataset; it maps 1:1 to a Supabase `reviews` table.
-const seed: Review[] = [
-  {
-    id: "rv1",
-    author: "Sarah M.",
-    rating: 5,
-    date: "2026-05-22",
-    text: "Jason and Rachelle were amazing with our anxious rescue, Bobby. Daily photo updates and he came home so relaxed and happy. Couldn't recommend them more!",
-  },
-  {
-    id: "rv2",
-    author: "David K.",
-    rating: 5,
-    date: "2026-05-09",
-    text: "Our Lab Bella had the best week. Lovely couple, great communication, and you can tell they genuinely love dogs. Will absolutely book again.",
-  },
-  {
-    id: "rv3",
-    author: "Aoife L.",
-    rating: 5,
-    date: "2026-04-27",
-    text: "First time leaving our pup and they put us totally at ease. The courtyard and daily walks were perfect for her. 10/10.",
-  },
-  {
-    id: "rv4",
-    author: "Conor B.",
-    rating: 5,
-    date: "2026-04-15",
-    text: "Super flexible with drop-off and pickup, and sent us updates throughout. Max clearly had a great time. Thank you both!",
-  },
-  {
-    id: "rv5",
-    author: "Niamh O.",
-    rating: 5,
-    date: "2026-03-30",
-    text: "They looked after our senior dog with so much care, including his medication without any fuss. Real peace of mind.",
-  },
-  {
-    id: "rv6",
-    author: "Emma R.",
-    rating: 5,
-    date: "2026-03-12",
-    text: "Brilliant from start to finish. Friendly, reliable and our two terriers were spoiled rotten. Highly recommend.",
-  },
-  {
-    id: "rv7",
-    author: "Liam W.",
-    rating: 5,
-    date: "2026-02-21",
-    text: "Booked day care a few times now and it's always great. Easy to arrange and the dogs love going.",
-  },
-  {
-    id: "rv8",
-    author: "Grace H.",
-    rating: 5,
-    date: "2026-02-03",
-    text: "Kind, professional and great with nervous dogs. Our collie warmed to them instantly. We'll be back!",
-  },
-];
-
+// Reviews now come from Supabase. The `reviews` columns (id, author, rating,
+// date, text) match the Review type 1:1, so no snake→camel mapping is needed.
 export const useReviewsStore = defineStore("reviews", () => {
-  const reviews = ref<Review[]>(seed);
+  const reviews = ref<Review[]>([]);
+  const isLoading = ref(false);
+  const loaded = ref(false);
+
+  // Idempotent: safe to call from multiple components (header + reviews page).
+  async function fetch() {
+    if (loaded.value || isLoading.value) return;
+    isLoading.value = true;
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("id, author, rating, date, text")
+      .order("date", { ascending: false });
+    isLoading.value = false;
+    if (error) {
+      console.error("Failed to load reviews:", error.message);
+      return;
+    }
+    reviews.value = (data ?? []) as Review[];
+    loaded.value = true;
+  }
 
   const count = computed(() => reviews.value.length);
   const average = computed(() =>
@@ -74,15 +34,23 @@ export const useReviewsStore = defineStore("reviews", () => {
         reviews.value.length
       : 0,
   );
-
-  // Newest first.
   const sorted = computed(() =>
     [...reviews.value].sort((a, b) => b.date.localeCompare(a.date)),
   );
 
-  function addReview(data: Omit<Review, "id">) {
-    reviews.value.push({ id: crypto.randomUUID(), ...data });
+  async function addReview(data: Omit<Review, "id">) {
+    // Single sitter for now; sitter_id will come from context once multi-sitter.
+    const { data: row, error } = await supabase
+      .from("reviews")
+      .insert({ ...data, sitter_id: "sitter-1" })
+      .select("id, author, rating, date, text")
+      .single();
+    if (error) {
+      console.error("Failed to add review:", error.message);
+      return;
+    }
+    if (row) reviews.value.push(row as Review);
   }
 
-  return { reviews, sorted, count, average, addReview };
+  return { reviews, sorted, count, average, isLoading, fetch, addReview };
 });

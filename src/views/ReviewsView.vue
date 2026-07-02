@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
 import { useReviewsStore } from "@/stores/reviews";
@@ -6,7 +7,10 @@ import StarRating from "@/components/ui/StarRating.vue";
 import ReviewCard from "@/components/reviews/ReviewCard.vue";
 
 const { sitter } = storeToRefs(useSitterStore());
-const { sorted, count, average } = storeToRefs(useReviewsStore());
+const reviewsStore = useReviewsStore();
+const { sorted, count, average, isLoading } = storeToRefs(reviewsStore);
+
+onMounted(() => reviewsStore.fetch());
 </script>
 
 <template>
@@ -24,7 +28,8 @@ const { sorted, count, average } = storeToRefs(useReviewsStore());
       </div>
     </header>
 
-    <div class="list">
+    <p v-if="isLoading && !sorted.length" class="loading">Loading reviews…</p>
+    <div v-else class="list">
       <ReviewCard v-for="r in sorted" :key="r.id" :review="r" />
     </div>
   </section>
@@ -58,5 +63,8 @@ const { sorted, count, average } = storeToRefs(useReviewsStore());
 .list {
   display: grid;
   gap: 0.75rem;
+}
+.loading {
+  color: #888;
 }
 </style>
