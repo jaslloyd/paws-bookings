@@ -134,6 +134,33 @@ Full CRUD maps 1:1 to the existing functions:
 
 ## Out of scope / next
 
-- **Phase 2b — Auth:** Supabase Google + email/password, gate booking + admin,
-  tie reservations to the signed-in client, pet profiles, tighten RLS.
-- **Deploy:** Vercel/Netlify so the public `/s/:slug` link works for real.
+### Phase 2b — Auth + multi-tenancy
+
+The admin is **per-sitter**: a sitter signs up, and their admin shows only
+*their* requests / services / availability. The schema already supports this
+(every table has `sitter_id`; `sitters` has a `slug` and will get `user_id`).
+
+Single-sitter shortcuts to remove:
+- Hardcoded `sitterStore.fetch("jason-south-dublin")` in the admin →
+  derive the sitter from the **session**.
+- `reservations.fetch()` returns ALL rows → scope to the current sitter.
+- Interim open RLS → per-sitter isolation.
+
+Approach:
+- **Auth:** Supabase Google + email/password (two roles: `client` booking,
+  `sitter`/admin).
+- **Link** the auth user to a `sitters` row (`sitters.user_id = auth.uid()`);
+  on sitter signup create their sitter + default services + slug (onboarding).
+- **RLS does the tenancy:** policies keyed to `auth.uid()`, e.g. reservations
+  `using (sitter_id in (select id from sitters where user_id = auth.uid()))`.
+  Then the admin's `select *` returns only that sitter's rows — no client-side
+  filtering, no cross-tenant leaks. Lock down service writes + full reservation
+  reads the same way. Public/anon keeps read access to sitters/services/reviews
+  + the `availability` view.
+- Gate the booking flow (login to book) and the admin routes.
+- Tie client reservations to the signed-in client; add pet profiles.
+
+### Deploy
+
+Vercel/Netlify (set the `VITE_SUPABASE_*` env vars there) so the public
+`/s/:slug` link works for real visitors — after RLS is locked down in 2b.
