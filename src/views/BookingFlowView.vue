@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import type { DirectReservation } from "@/types";
 import { useSitterStore } from "@/stores/sitter";
@@ -8,7 +9,11 @@ import { useReservationsStore } from "@/stores/reservations";
 import BookingSummary from "@/components/booking/BookingSummary.vue";
 import BookingControls from "@/components/booking/BookingControls.vue";
 
-const { sitter } = storeToRefs(useSitterStore());
+const route = useRoute();
+const sitterStore = useSitterStore();
+const { sitter } = storeToRefs(sitterStore);
+onMounted(() => sitterStore.fetch(route.params.slug as string));
+
 const draft = useBookingDraftStore();
 const { formattedTotal } = storeToRefs(draft);
 const reservations = useReservationsStore();

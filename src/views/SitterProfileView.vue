@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useTitle } from "@vueuse/core";
@@ -13,18 +13,17 @@ import BookingBar from "@/components/booking/BookingBar.vue";
 import BookingDrawer from "@/components/booking/BookingDrawer.vue";
 
 const route = useRoute();
-const { sitter } = storeToRefs(useSitterStore());
+const sitterStore = useSitterStore();
+const { sitter, status } = storeToRefs(sitterStore);
 
-// Only one sitter for now, but match the slug so bad URLs 404 cleanly.
-const found = computed(() => route.params.slug === sitter.value.slug);
+// Load the sitter (+ services) for this slug.
+onMounted(() => sitterStore.fetch(route.params.slug as string));
 
 // Keep the booking selection (service/pets/dates) in the URL query string.
 useBookingUrlSync();
 
-// Profile has a DYNAMIC title (sitter name), so it sets its own here rather
-// than via route meta. No restoreOnUnmount needed — the router's afterEach
-// guard sets the next route's title on navigation.
-useTitle(() => (found.value ? sitter.value.name : "Sitter not found"), {
+// Dynamic tab title from the (async) sitter name.
+useTitle(() => sitter.value.name || "Pet sitter", {
   titleTemplate: "%s | Pet Sitter | Paws",
 });
 
@@ -33,7 +32,12 @@ const drawerOpen = ref(false);
 </script>
 
 <template>
-  <div v-if="found" class="profile-page">
+  <p v-if="status === 'loading' || status === 'idle'" class="state">Loading…</p>
+  <p v-else-if="status === 'error'" class="missing">
+    Sorry, we couldn't find that sitter.
+  </p>
+
+  <div v-else class="profile-page">
     <SitterHeader />
 
     <!-- Two columns: calendar (+ secondary info) scrolls on the left, the
@@ -63,8 +67,6 @@ const drawerOpen = ref(false);
       <BookingDrawer :open="drawerOpen" @close="drawerOpen = false" />
     </div>
   </div>
-
-  <p v-else class="missing">Sorry, we couldn't find that sitter.</p>
 </template>
 
 <style scoped>
@@ -116,7 +118,8 @@ const drawerOpen = ref(false);
   max-width: 640px;
 }
 
-.missing {
+.missing,
+.state {
   color: #888;
 }
 </style>

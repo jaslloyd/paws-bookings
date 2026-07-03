@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useSitterStore } from "@/stores/sitter";
 import { useReviewsStore } from "@/stores/reviews";
 import StarRating from "@/components/ui/StarRating.vue";
 import ReviewCard from "@/components/reviews/ReviewCard.vue";
 
-const { sitter } = storeToRefs(useSitterStore());
+const route = useRoute();
+const sitterStore = useSitterStore();
+const { sitter } = storeToRefs(sitterStore);
 const reviewsStore = useReviewsStore();
 const { sorted, count, average, status } = storeToRefs(reviewsStore);
 
-onMounted(() => reviewsStore.fetch());
+onMounted(() => {
+  sitterStore.fetch(route.params.slug as string); // for the name/back link
+  reviewsStore.fetch();
+});
 </script>
 
 <template>

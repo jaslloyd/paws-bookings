@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import { useSitterStore } from "./sitter";
 import { quoteForRange } from "@/utils/pricing";
@@ -16,6 +16,19 @@ export const useBookingDraftStore = defineStore("bookingDraft", () => {
   const pets = ref(1);
   const start = ref("2026-08-03");
   const end = ref("2026-08-05");
+
+  // Services load asynchronously now. Once they arrive, make sure the selected
+  // serviceId is valid (default to the first). Guarded so it won't clobber a
+  // valid choice (e.g. one hydrated from the URL).
+  watch(
+    () => sitterStore.activeServices,
+    (services) => {
+      if (services.length && !services.some((s) => s.id === serviceId.value)) {
+        serviceId.value = services[0].id;
+      }
+    },
+    { immediate: true },
+  );
 
   const service = computed(() =>
     sitterStore.activeServices.find((s) => s.id === serviceId.value),
