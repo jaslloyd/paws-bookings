@@ -29,6 +29,7 @@ const form = reactive({
 
 const errors = reactive<{ name?: string; email?: string }>({});
 const submitted = ref<DirectReservation | null>(null);
+const submitting = ref(false);
 
 const isEmail = (e: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
 
@@ -38,10 +39,11 @@ function validate(): boolean {
   return !errors.name && !errors.email;
 }
 
-function submit() {
-  if (!validate() || !draft.service) return;
+async function submit() {
+  if (!validate() || !draft.service || submitting.value) return;
 
-  submitted.value = reservations.createRequest({
+  submitting.value = true;
+  const created = await reservations.createRequest({
     sitterId: sitter.value.id,
     serviceId: draft.serviceId,
     start: draft.start,
@@ -56,6 +58,8 @@ function submit() {
     petDetails: form.petDetails || undefined,
     message: form.message || undefined,
   });
+  submitting.value = false;
+  if (created) submitted.value = created;
 }
 </script>
 
@@ -134,7 +138,9 @@ function submit() {
           />
         </label>
 
-        <button type="submit">Send request</button>
+        <button type="submit" :disabled="submitting">
+          {{ submitting ? "Sending…" : "Send request" }}
+        </button>
         <p class="note">No payment is taken now — you'll arrange that directly.</p>
       </form>
     </template>

@@ -1,8 +1,9 @@
 # Phase 2a — Supabase Data Layer (auth deferred)
 
-> Status: **planned, not started.** Picking this up later. Decisions locked in:
-> data-layer-first (keep guest booking, auth is Phase 2b), and a Supabase setup
-> walkthrough is needed (no project created yet).
+> Status: **✅ DONE.** All stores migrated to Supabase (reviews, sitter/services,
+> reservations CRUD). Public availability reads the PII-free `availability` view;
+> admin reads the full table; guest booking inserts real rows. Verified
+> end-to-end. Next up: **Phase 2b — auth** (see bottom).
 
 ## Context
 

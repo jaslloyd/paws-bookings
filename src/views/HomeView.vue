@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import type { DirectReservation } from "@/types";
@@ -9,7 +9,9 @@ import { toAdminItems } from "@/utils/calendar";
 import BookingCalendar from "@/components/calendar/BookingCalendar.vue";
 
 const router = useRouter();
-const { reservations, pending } = storeToRefs(useReservationsStore());
+const reservationsStore = useReservationsStore();
+const { reservations, pending } = storeToRefs(reservationsStore);
+onMounted(reservationsStore.fetch);
 
 // Confirmed *customer* bookings — direct only (manual blocks are approved too
 // but have no client). The `r is DirectReservation` predicate narrows the

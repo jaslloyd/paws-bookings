@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from "vue";
+import { computed, reactive, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useReservationsStore } from "@/stores/reservations";
 import { useSitterStore } from "@/stores/sitter";
@@ -8,7 +8,14 @@ import { sortByStart } from "@/utils/bookings";
 
 const store = useReservationsStore();
 const { reservations, pending } = storeToRefs(store);
-const { sitter } = storeToRefs(useSitterStore());
+const sitterStore = useSitterStore();
+const { sitter } = storeToRefs(sitterStore);
+
+onMounted(() => {
+  store.fetch();
+  // Single sitter for now; comes from the signed-in sitter once auth lands.
+  sitterStore.fetch("jason-south-dublin");
+});
 
 const pendingSorted = computed(() => sortByStart(pending.value));
 const confirmed = computed(() =>

@@ -1,9 +1,7 @@
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useMediaQuery } from "@vueuse/core";
-import { storeToRefs } from "pinia";
-import { useReservationsStore } from "@/stores/reservations";
 import { useBookingDraftStore } from "@/stores/bookingDraft";
-import { bookedDates } from "@/utils/calendar";
+import { supabase } from "@/lib/supabase";
 
 export interface Cell {
   iso: string;
@@ -32,12 +30,38 @@ const fromISO = (s: string) => {
  * booking draft. The component just renders what this returns.
  */
 export function useAvailabilityCalendar() {
-  const { reservations } = storeToRefs(useReservationsStore());
   const draft = useBookingDraftStore();
 
-  const bookedSet = computed(
-    () => new Set(bookedDates(reservations.value).map(toISO)),
-  );
+  // Public availability comes from the PII-free `availability` view (booked
+  // ranges only — no client names/contact). The composable owns this fetch.
+  const bookedRanges = ref<{ start: string; end: string }[]>([]);
+  onMounted(async () => {
+    const { data, error } = await supabase
+      .from("availability")
+      .select("start_date, end_date");
+    if (error) {
+      console.error("Failed to load availability:", error.message);
+      return;
+    }
+    bookedRanges.value = (data ?? []).map((r) => ({
+      start: r.start_date,
+      end: r.end_date,
+    }));
+  });
+
+  // Expand the ranges into a set of individual booked day strings.
+  const bookedSet = computed(() => {
+    const out = new Set<string>();
+    for (const r of bookedRanges.value) {
+      const cur = fromISO(r.start);
+      const end = fromISO(r.end);
+      while (cur <= end) {
+        out.add(toISO(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    return out;
+  });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

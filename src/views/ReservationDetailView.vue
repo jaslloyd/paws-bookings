@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import type { ReservationStatus } from "@/types";
 import { useReservationsStore } from "@/stores/reservations";
@@ -11,6 +12,12 @@ const route = useRoute();
 const router = useRouter();
 const store = useReservationsStore();
 const sitterStore = useSitterStore();
+const { status } = storeToRefs(store);
+
+onMounted(() => {
+  store.fetch();
+  sitterStore.fetch("jason-south-dublin"); // for the service name
+});
 
 const reservation = computed(() =>
   store.getReservation(route.params.id as string),
@@ -47,9 +54,9 @@ const updateStatus = (status: ReservationStatus) => {
 };
 
 // `remove` stays separate — it does more than set a field (deletes + navigates).
-const remove = () => {
+const remove = async () => {
   if (!reservation.value) return;
-  store.removeReservation(reservation.value.id);
+  await store.removeReservation(reservation.value.id);
   router.push("/admin");
 };
 </script>
@@ -58,7 +65,10 @@ const remove = () => {
   <section class="detail">
     <button type="button" class="back" @click="goBack">← Back</button>
 
-    <template v-if="reservation">
+    <p v-if="!reservation && (status === 'loading' || status === 'idle')">
+      Loading…
+    </p>
+    <template v-else-if="reservation">
       <header class="head">
         <h1>{{ title }}</h1>
         <span

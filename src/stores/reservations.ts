@@ -1,61 +1,69 @@
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { useLocalStorage } from "@vueuse/core";
-import type { DirectReservation, ManualBlock, Reservation } from "@/types";
+import type {
+  DirectReservation,
+  ManualBlock,
+  Reservation,
+  ReservationStatus,
+} from "@/types";
+import { supabase } from "@/lib/supabase";
 
-// Bump the version suffix to force-ignore stale saved data (e.g. when the
-// seed changes) — the old key is simply left behind.
-const STORAGE_KEY = "paws-reservations-v2";
+type Status = "idle" | "loading" | "success" | "error";
 
-// Used only when nothing is saved yet.
-const mkBlock = (id: string, start: string, end: string): ManualBlock => ({
-  id,
-  sitterId: "sitter-1",
-  source: "manual",
-  title: "Unavailable",
-  start,
-  end,
-  status: "approved",
-  createdAt: "2026-06-30T09:00:00.000Z",
-  notes: "Imported from Pawshake availability.",
-});
+// ── Row (snake_case) → Reservation (camelCase, discriminated union) ──
+interface ReservationRow {
+  id: string;
+  sitter_id: string;
+  source: "direct" | "manual";
+  start_date: string;
+  end_date: string;
+  status: ReservationStatus;
+  created_at: string;
+  notes: string | null;
+  service_id: string | null;
+  pets: number | null;
+  quoted_price: number | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  pet_details: string | null;
+  message: string | null;
+  title: string | null;
+}
 
-const seed: Reservation[] = [
-  // A sample incoming request so the admin queue demos (pending requests do
-  // NOT block availability — only approved bookings/blocks do).
-  {
-    id: "r1",
-    sitterId: "sitter-1",
+const SELECT =
+  "id, sitter_id, source, start_date, end_date, status, created_at, notes, " +
+  "service_id, pets, quoted_price, contact_name, contact_email, " +
+  "contact_phone, pet_details, message, title";
+
+function rowToReservation(r: ReservationRow): Reservation {
+  const base = {
+    id: r.id,
+    sitterId: r.sitter_id,
+    start: r.start_date,
+    end: r.end_date,
+    status: r.status,
+    createdAt: r.created_at,
+    notes: r.notes ?? undefined,
+  };
+  if (r.source === "manual") {
+    return { ...base, source: "manual", title: r.title ?? "" };
+  }
+  return {
+    ...base,
     source: "direct",
-    serviceId: "svc-boarding",
-    start: "2026-08-03",
-    end: "2026-08-05",
-    pets: 1,
-    quotedPrice: 106,
-    status: "pending",
-    createdAt: "2026-06-29T10:00:00.000Z",
+    serviceId: r.service_id ?? "",
+    pets: r.pets ?? 1,
+    quotedPrice: r.quoted_price ?? 0,
     contact: {
-      name: "Aoife Byrne",
-      email: "aoife@example.com",
-      phone: "+353 86 123 4567",
+      name: r.contact_name ?? "",
+      email: r.contact_email ?? "",
+      phone: r.contact_phone ?? undefined,
     },
-    petDetails: "Milo, 3yo Cocker Spaniel. Friendly, needs 2 walks a day.",
-    message: "Away for a wedding — hoping you have space!",
-  },
-
-  // Real unavailability decoded from the Pawshake calendar (manual blocks).
-  // Past dates are auto-unavailable, so these are future ranges only.
-  mkBlock("b1", "2026-07-01", "2026-07-09"),
-  mkBlock("b2", "2026-07-11", "2026-07-11"),
-  mkBlock("b3", "2026-07-14", "2026-08-02"),
-  mkBlock("b4", "2026-08-08", "2026-08-09"),
-  mkBlock("b5", "2026-08-12", "2026-08-30"),
-  mkBlock("b6", "2026-09-01", "2026-09-03"),
-  mkBlock("b7", "2026-09-06", "2026-09-08"),
-  mkBlock("b8", "2026-09-14", "2026-09-30"),
-  mkBlock("b9", "2026-10-03", "2026-10-11"),
-  mkBlock("b10", "2026-10-24", "2026-12-31"),
-];
+    petDetails: r.pet_details ?? undefined,
+    message: r.message ?? undefined,
+  };
+}
 
 type NewRequest = Omit<
   DirectReservation,
@@ -64,57 +72,127 @@ type NewRequest = Omit<
 type NewBlock = Omit<ManualBlock, "id" | "status" | "createdAt" | "source">;
 
 export const useReservationsStore = defineStore("reservations", () => {
-  // useLocalStorage = a reactive ref synced to localStorage (deep-watched,
-  // JSON-serialised, falls back to `seed` when the key is empty). Replaces our
-  // manual load() + watch(localStorage.setItem).
-  const reservations = useLocalStorage<Reservation[]>(STORAGE_KEY, seed);
+  const reservations = ref<Reservation[]>([]);
+  const status = ref<Status>("idle");
+
+  async function fetch() {
+    if (status.value === "loading" || status.value === "success") return;
+    status.value = "loading";
+    const { data, error } = await supabase
+      .from("reservations")
+      .select(SELECT)
+      .order("start_date");
+    if (error) {
+      console.error("Failed to load reservations:", error.message);
+      status.value = "error";
+      return;
+    }
+    reservations.value = (data as unknown as ReservationRow[]).map(
+      rowToReservation,
+    );
+    status.value = "success";
+  }
 
   const pending = computed(() =>
     reservations.value.filter((r) => r.status === "pending"),
   );
-
   function getReservation(id: string): Reservation | undefined {
     return reservations.value.find((r) => r.id === id);
   }
 
-  // A client request — always starts "pending".
-  function createRequest(data: NewRequest): DirectReservation {
-    const reservation: DirectReservation = {
-      ...data,
-      source: "direct",
-      id: crypto.randomUUID(),
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-    reservations.value.push(reservation);
-    return reservation;
+  // Guest booking → insert a direct/pending row, return it (with DB-generated
+  // id + created_at) and add it to local state.
+  async function createRequest(
+    data: NewRequest,
+  ): Promise<DirectReservation | undefined> {
+    const { data: row, error } = await supabase
+      .from("reservations")
+      .insert({
+        sitter_id: data.sitterId,
+        source: "direct",
+        service_id: data.serviceId,
+        start_date: data.start,
+        end_date: data.end,
+        status: "pending",
+        pets: data.pets,
+        quoted_price: data.quotedPrice,
+        contact_name: data.contact.name,
+        contact_email: data.contact.email,
+        contact_phone: data.contact.phone ?? null,
+        pet_details: data.petDetails ?? null,
+        message: data.message ?? null,
+        notes: data.notes ?? null,
+      })
+      .select(SELECT)
+      .single();
+    if (error || !row) {
+      console.error("Failed to create request:", error?.message);
+      return;
+    }
+    const created = rowToReservation(
+      row as unknown as ReservationRow,
+    ) as DirectReservation;
+    reservations.value.push(created);
+    return created;
   }
 
-  // A manual block — confirmed straight away (it just occupies the calendar).
-  function addManualBlock(data: NewBlock): ManualBlock {
-    const block: ManualBlock = {
-      ...data,
-      source: "manual",
-      id: crypto.randomUUID(),
-      status: "approved",
-      createdAt: new Date().toISOString(),
-    };
+  async function addManualBlock(
+    data: NewBlock,
+  ): Promise<ManualBlock | undefined> {
+    const { data: row, error } = await supabase
+      .from("reservations")
+      .insert({
+        sitter_id: data.sitterId,
+        source: "manual",
+        title: data.title,
+        start_date: data.start,
+        end_date: data.end,
+        status: "approved",
+        notes: data.notes ?? null,
+      })
+      .select(SELECT)
+      .single();
+    if (error || !row) {
+      console.error("Failed to add block:", error?.message);
+      return;
+    }
+    const block = rowToReservation(
+      row as unknown as ReservationRow,
+    ) as ManualBlock;
     reservations.value.push(block);
     return block;
   }
 
-  function setStatus(id: string, status: Reservation["status"]) {
+  async function setStatus(id: string, next: ReservationStatus) {
+    const { error } = await supabase
+      .from("reservations")
+      .update({ status: next })
+      .eq("id", id);
+    if (error) {
+      console.error("Failed to update status:", error.message);
+      return;
+    }
     const r = reservations.value.find((r) => r.id === id);
-    if (r) r.status = status;
+    if (r) r.status = next;
   }
 
-  function removeReservation(id: string) {
+  async function removeReservation(id: string) {
+    const { error } = await supabase
+      .from("reservations")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      console.error("Failed to delete reservation:", error.message);
+      return;
+    }
     reservations.value = reservations.value.filter((r) => r.id !== id);
   }
 
   return {
     reservations,
+    status,
     pending,
+    fetch,
     getReservation,
     createRequest,
     addManualBlock,
