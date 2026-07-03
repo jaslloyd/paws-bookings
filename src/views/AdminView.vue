@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia";
 import { useReservationsStore } from "@/stores/reservations";
 import { useSitterStore } from "@/stores/sitter";
 import ReservationCard from "@/components/reservation/ReservationCard.vue";
+import ServicesManager from "@/components/admin/ServicesManager.vue";
 import { sortByStart } from "@/utils/bookings";
 
 const store = useReservationsStore();
@@ -67,6 +68,9 @@ const addBlock = () => {
     <div class="list">
       <ReservationCard v-for="r in confirmed" :key="r.id" :reservation="r" />
     </div>
+
+    <h2>Services &amp; pricing</h2>
+    <ServicesManager />
 
     <h2>Blocked dates</h2>
     <div class="list">

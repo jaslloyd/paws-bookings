@@ -86,8 +86,13 @@ alter table reviews      enable row level security;
 alter table reservations enable row level security;
 
 create policy "public read sitters"  on sitters  for select using (true);
-create policy "public read services" on services for select using (true);
 create policy "public read reviews"  on reviews  for select using (true);
+
+-- Services: public read; interim open write for the un-gated admin (2b locks
+-- these to the signed-in sitter).
+create policy "public read services" on services for select using (true);
+create policy "insert services"      on services for insert with check (true);
+create policy "update services"      on services for update using (true);
 
 create policy "read reservations"    on reservations for select using (true);
 create policy "insert reservations"  on reservations for insert with check (true);

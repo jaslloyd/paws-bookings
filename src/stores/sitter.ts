@@ -37,6 +37,14 @@ const rowToService = (r: ServiceRow): Service => ({
   additionalPetRate: r.additional_pet_rate,
   active: r.active,
 });
+const serviceToRow = (s: Omit<Service, "id">) => ({
+  name: s.name,
+  unit: s.unit,
+  base_rate: s.baseRate,
+  additional_pet_rate: s.additionalPetRate,
+  active: s.active,
+});
+const SERVICE_COLS = "id, name, unit, base_rate, additional_pet_rate, active";
 
 interface SitterRow {
   id: string;
@@ -101,5 +109,47 @@ export const useSitterStore = defineStore("sitter", () => {
     return sitter.value.services.find((s) => s.id === id);
   }
 
-  return { sitter, status, activeServices, getService, fetch };
+  async function updateService(service: Service) {
+    const { error } = await supabase
+      .from("services")
+      .update(serviceToRow(service))
+      .eq("id", service.id);
+    if (error) {
+      console.error("Failed to update service:", error.message);
+      return;
+    }
+    const i = sitter.value.services.findIndex((s) => s.id === service.id);
+    if (i !== -1) sitter.value.services[i] = { ...service };
+  }
+
+  async function addService(
+    data: Omit<Service, "id">,
+  ): Promise<Service | undefined> {
+    const { data: row, error } = await supabase
+      .from("services")
+      .insert({
+        id: crypto.randomUUID(),
+        sitter_id: sitter.value.id,
+        ...serviceToRow(data),
+      })
+      .select(SERVICE_COLS)
+      .single();
+    if (error || !row) {
+      console.error("Failed to add service:", error?.message);
+      return;
+    }
+    const service = rowToService(row as unknown as ServiceRow);
+    sitter.value.services.push(service);
+    return service;
+  }
+
+  return {
+    sitter,
+    status,
+    activeServices,
+    getService,
+    fetch,
+    updateService,
+    addService,
+  };
 });
